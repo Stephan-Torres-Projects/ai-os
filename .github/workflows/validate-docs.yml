@@ -1,0 +1,37 @@
+name: validate-docs
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+
+jobs:
+  structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enforce lab folder convention
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail=0
+          shopt -s nullglob
+          for lab in docs/lab-*/; do
+            for required in README.md NOTES.md; do
+              f="${lab}${required}"
+              if [[ ! -s "$f" ]]; then
+                echo "::error file=${f}::Missing or empty ${required} in ${lab}"
+                fail=1
+              fi
+            done
+          done
+          if [[ "$fail" -eq 1 ]]; then
+            echo "Lab folders must contain non-empty README.md and NOTES.md."
+            exit 1
+          fi
+          echo "All lab folders valid."
